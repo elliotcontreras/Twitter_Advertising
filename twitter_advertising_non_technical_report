@@ -1,0 +1,321 @@
+Twitter Advertising
+
+Introduction
+This is a non-technical report for my capstone project at General Assembly’s Data Science Immersive program. The capstone is meant as a culmination of everything learned while attending the program. I chose to perform Natural Language Processing (NLP) on Twitter data in order to assist in advertising campaigns. This project is geared more towards advertisers, marketing, and any company who wants to extend their customer relations platform to communicate with their followers.
+
+Goals
+Through NLP of tweets, a company can gauge how people are feeling about their product. One of my goals is to create a model that will classify whether a message has positive or negative sentiment value. Part of this classification is to filter out those positive/negative tweets and see where the problems are originating from. A company can contact those customers directly that are having issues with their product, and at the same time reward those who are loyal to the brand.
+
+The Data
+For introduction purposes, all work was scripted in python with several libraries used. Some of these libraries are Numpy, Pandas, Matplotlib, Scikit Learn, and Keras. Through the use of the Twitter API, tweets were mined and collected. The tweets were returned in a condensed JSON format. As the example below, the information is nested, and often hard to read.
+
+![Twitter JSON Response](https://cdn-images-1.medium.com/max/800/0*0Mn2PgQaonyvh61w.)
+
+Through an automated process, certain features were selected, and the data was saved onto a pandas dataframe.
+
+![Pandas Dataframe][https://cdn-images-1.medium.com/max/800/0*sawG45ZlxCErF9Hy.]
+
+The following features were used in this project:
+-Created at: The timestamp of when the tweet was created.
+-Favorite count: The overall count of how many times the tweet was ‘favorited.’
+-Hashtags: The hashtag which the tweet was associated with.
+-Location: Declared location from the user.
+-Mined at: The timestamp of when the tweet was mined.
+-Retweet count: The overall count of how many times the tweet was ‘retweeted.’
+-Screen name: Screen name of the user.
+-Source: The source from where the tweet originated (ie: device).
+-Text: The text of the tweet.
+-Word Count: The total number of words in a tweet.
+-Tweet Length: The character length of a tweet.
+
+The data returned is not clean. I say that it is not clean because in order for me to work with the data, I need it in a particular format. There are numerous functions that were written to take care of this process. My process for cleaning the data is as follows:
+-Extract the coordinates of the tweet using its location variable. If none, I set it to San Francisco, CA. Why SF? Because -Twitter headquarters reside in SF.
+-The created_at and mined_at variables get converted to a datetime object to perform time related functions.
+-The hashtags variable receive ‘#’ at the beginning, and blank spaces are removed. This is to keep all the hashtags in the same format.
+-The source variable gets the html code removed.
+-The text variable gets hyperlinks removed, ‘@’ mentions removed, and the words are tokenized. Example:
+
+    #TattoosForShawn I was thinking some headphones, then the wire is sound waves of fans singing Life Of the Party            @ShawnMendes
+    Becomes: ‘tattoosforshawn’, ‘thinking’, ‘headphones’, ‘wire’, ‘sound’, ‘waves’, ‘fans’, ‘singing’, ‘life’, ‘party’
+
+The image below shows what the dataframe looks like after the data is cleaned:
+
+![Clean Pandas Dataframe][https://cdn-images-1.medium.com/max/800/0*ODcLax1C3HwU0mqy.]
+
+Feature Engineering
+Aside from the features that were mined from twitter, there are several others which were created in order to understand the data better. The VADER (Valence Aware Dictionary for sEntiment Reasoning) library includes a Sentiment Intensity Analyzer which is the basis of determining the sentiment value of a given tweet. It is a rule-based sentiment analysis tool that is specifically attuned to sentiments expressed in social media. Given a message, the analyzer returns values which are measurable:
+
+![VADER Sentiment Analysis Example][https://cdn-images-1.medium.com/max/800/0*899_mFpt_h0VjD3k.]
+
+-neg: Negative Sentiment
+-neu: Neutral Sentiment
+-pos: Positive Sentiment
+-compound: Compound (i.e. aggregated score)
+
+The Nodebox English Linguistics library allowed for psychological content analysis through the Regressive Imagery Dictionary. The RID assigns scores to primary, secondary and emotional process thoughts in a text. This was an interesting package because it opened up a new way of seeing messages.
+
+![Nodebox Example][https://cdn-images-1.medium.com/max/800/0*fdCXpm9e3sGT6NV6.]
+
+-Primary: free-form associative thinking involved in dreams and fantasy
+-Secondary: logical, reality-based and focused on problem solving
+-Emotions: expressions of fear, sadness, hate, affection, etc.
+
+Exploring the Data
+Exploratory Data Analysis (EDA) is an approach to analyzing data sets to summarize their main characteristics. I chose to look at the data through two different points of views. The first through a more general overview of all the public information collected. The second through a more specific view, as if I was a company interested in my information. Let’s look at a general view first.
+
+I chose to look at each of the features and see an overall view of the data. The time_created variable shows that most tweets are sent in the afternoon, and then in the hours after midnight. Mind that these times are referenced to Pacific Standard time. The hashtags aggregate the main topics that were being discussed during the mining process.
+
+![Time Created/Hashtags][https://cdn-images-1.medium.com/max/800/0*Qnx8ZgPiKU9H57nJ.]
+
+The tweets collected were mainly focused on the United States because the sentiment libraries are trained on the english language. That and there are encoding issues when looking at foreign characters. San Francisco, CA stands out from the other locations as this was the default city if no city was named. Many users do not have a location in their profile, and neither in their tweets. Twitter headquarters is in downtown San Francisco, therefore the tweets originate from there.
+The sources variable show that mobile use of twitter reigns at the top. The top three in order are iPhone, Android, and the Twitter web client. The web client refers to using twitter on a desktop through a web browser, and a web browser on mobile devices.
+
+![Devices][https://cdn-images-1.medium.com/max/800/0*93qv57SRsoaMPlMp.]
+
+After separating the tweets into their respective sentiment value, I decided to look at the word count distribution. Both the negative and positive tweets have their word count distribution peaking at 15 words per tweets. The neutral tweets are mostly at 10 words and below.
+
+![Word Count Distribution][https://cdn-images-1.medium.com/max/800/0*KzMsVQBQr6h9aFBU.]
+
+For the VADER sentiment Analysis, I will be looking at the compound values. Compound amount in the next image is the aggregated value from the VADER sentiment analysis. The compound values range from -1 to 1; Negative sentiment, to neutral sentiment, to positive sentiment. Most of the tweets are rated neutral. I believe this is because the VADER sentiment analyzer is not trained on words that are new to 2017, ie: fleek.
+
+![Compound Distribution][https://cdn-images-1.medium.com/max/800/0*2zcAAhWGZzoZI52S.]
+
+#Marriott
+After the general overview of the data, I wanted to take a look at specific tweets associated with the Marriott brand. The process in acquiring the data is the same as before, except that I am passing the hashtag “#Marriott” into a search parameter so only information related to that hashtag is returned.
+The first thing I want to look at is where in the world #Marriott is being talked about. Using the coordinates variable, I am able to plot on a map where the tweets originated from.
+
+![#Marriott Map][https://cdn-images-1.medium.com/max/800/0*44TjE6JqLsNMSreS.]
+
+Looking at the sentiment value over time, I am able to gauge the amount of positive or negative tweets related to Marriott. A majority of the tweets are positive things being said about Marriott, with just a few in the negative range.
+
+![Marriott Compound Over Time][https://cdn-images-1.medium.com/max/800/0*L1eQBw3pOFanohfp.]
+
+An example of a tweet with high compound score at 0.951:
+
+![High Compound][https://cdn-images-1.medium.com/max/800/0*Pi_vMTyeRX4_ya46.]
+
+An example of a tweet with low compound score at -0.6551:
+
+![Low Compound][https://cdn-images-1.medium.com/max/800/0*i0al0oQ3QyQT08iH.]
+
+As an associate of Marriott, I would be able to contact the customer who had a problem and offer some sort of solution. The same goes with rewarding the hotels that have the best reviews.
+
+Modeling the Data
+The VADER sentiment analyzer was the basis for classifying the sentiment values of tweets. I wanted to see if I could classify tweets using the models learned in class. Before continuing, I needed to convert the text data into a format that python could understand. I used word2vec to create vectors out of words. In word2vec, a distributed representation of a word is used. Take a vector with several hundred dimensions (say 300). Each word is represented by a distribution of weights across those elements. So instead of a one-to-one mapping between an element in the vector and a word, the representation of a word is spread across all of the elements in the vector, and each element in the vector contributes to the definition of many words. 
+
+Example of a 300 dimension vector for the word ‘dog’:
+
+! [Dog 300 Dimension Vector][https://cdn-images-1.medium.com/max/800/0*Jo5QUOcUNF0dfeua.]
+
+# creates a vector given a sentence/tweet
+# takes a list of words, and array size of w2v vector
+# tokens == a list of words (the tokenized tweet)
+# size == the dimensional size of the vector
+size = 300
+def buildWordVector(tokens, size):
+    vec = np.zeros(size).reshape((1, size))
+    count = 0.
+    for word in tokens:
+        try:
+            vec+= w2v[word].reshape((1,size))
+            count += 1.
+        except BaseException: # handling the case where the token is not
+            try:
+                continue
+ 
+    if count != 0:
+        # get centroid of sentence
+        vec /= count
+    return vec
+
+Once each word is vectorized, the next step is creating a vector of the tweet itself. Each word vector in the tweet is summed together, divided by the total number of words in tweet, this creates a vector for the tweet which is the centroid of the summed vectors. This was something powerful that I came across. By creating these vectors, you are able to perform matrix math operations and find new patterns. A cosine similarity can be performed to these vectors, which enables you to see similar tweets/words as well as the most opposite. The same steps can be done to create a vector for a user, once the user’s tweets are vectorized.
+
+![Tweet Vector][https://cdn-images-1.medium.com/max/800/0*I6dUErCR68AqXoz_.]
+
+For reference, there are three classes being classified: Negative, Neutral and Positive. The data is split into a 85/15 ratio for training and testing data. My base estimator is multinomial Logistic Regression. I am looking at the recall scores more specific because recall is “how complete the results are”. High recall means that an algorithm returned most of the relevant results. As you can see, the neutral classification is higher than the rest.
+
+![Logistic Regression Results][https://cdn-images-1.medium.com/max/800/0*NHMa5aHqIvH7nUW6.]
+
+Extra Trees Classifier was the second model attempted. An “extra trees” classifier, otherwise known as an “Extremely randomized trees”classifier, is a variant of a random forest. Unlike a random forest, at each step the entire sample is used and decision boundaries are picked at random, rather than the best one. Again, the neutral classification is higher than the rest. The negative classification is performing horrible.
+
+![Extra Trees Results][https://cdn-images-1.medium.com/max/800/0*Grj9Wn58JCq-JXhA.]
+
+My last attempt at classifying is to perform it with a neural network. Keras is an open source neural network library written in Python. My first attempt with Keras was to create a neural network that was deep and wide. It had 5 Dense layers with 500, 800, 1000, 300, and 3 neurons respectively. As well as Dropout layers before each Dense layer set at 0.1, 0.5, 0.2 0.2, and 0.2. Activation for the first four layers is ‘relu,’ and ‘softmax’ for the final layer.
+
+# in order for keras to accurately multi-classify, must convert from # 1 column to 3 columns
+y_train = keras.utils.np_utils.to_categorical(y_train,       num_classes=3)
+y_test = keras.utils.np_utils.to_categorical(y_test, num_classes=3)
+
+# MULTI-CLASSIFICATION
+# Evaluating with a Keras NN
+# fix random seed for reproducibility
+
+seed = 7
+np.random.seed(seed)
+from keras.constraints import maxnorm
+
+# Keras neural network deep and wide.
+model_keras = Sequential()
+model_keras.add(Dropout(0.1, input_shape=(train_vecs_w2v.shape[1],)))
+model_keras.add(Dense(500, activation=’relu’, kernel_constraint=maxnorm(1)))
+model_keras.add(Dropout(0.5))
+model_keras.add(Dense(800, activation=’relu’, kernel_constraint=maxnorm(1)))
+model_keras.add(Dropout(0.2))
+model_keras.add(Dense(1000, activation=’relu’, kernel_constraint=maxnorm(1)))
+model_keras.add(Dropout(0.2))
+model_keras.add(Dense(300, activation=’relu’, kernel_constraint=maxnorm(1)))
+model_keras.add(Dropout(0.2))
+model_keras.add(Dense(3, activation=’softmax’))
+
+epochs = 20
+
+model_keras.compile(loss=’categorical_crossentropy’,
+                         optimizer=’adam’,
+                         metrics=[‘accuracy’])
+                         
+history = model_keras.fit(train_vecs_w2v, y_train, epochs=epochs, validation_data=(test_vecs_w2v, y_test), batch_size=32,                               verbose=2)
+
+score = model_keras.evaluate(test_vecs_w2v, y_test, batch_size=128, verbose=0)
+
+print ‘Evaluated score on test data:’, score[1]
+
+# summarize history for accuracy
+plt.figure(num=None, figsize=(8, 6), dpi=100, facecolor=’w’, edgecolor=’k’)
+plt.plot(history.history[‘acc’])
+plt.plot(history.history[‘val_acc’], c=’r’, ls=’dashed’)
+plt.title(‘model accuracy’)
+plt.ylabel(‘accuracy’)
+plt.xlabel(‘epoch’)
+plt.legend([‘train’, ‘test’], loc=’upper left’)
+plt.hlines(y=score[1], xmin=0, xmax=epochs)
+plt.show()
+
+# summarize history for loss
+plt.figure(num=None, figsize=(8, 6), dpi=100, facecolor=’w’, edgecolor=’k’)
+plt.plot(history.history[‘loss’])
+plt.plot(history.history[‘val_loss’], c=’r’, ls=’dashed’)
+plt.title(‘model loss’)
+plt.ylabel(‘loss’)
+plt.xlabel(‘epoch’)
+plt.legend([‘train’, ‘test’], loc=’upper left’)
+plt.show()
+
+![Keras Model Accuracy v001][https://cdn-images-1.medium.com/max/800/0*q1TXUNplEDFe9p6H.]
+![Keras Model Classification Report][https://cdn-images-1.medium.com/max/800/0*ySnVPOOdVfz2Yoig.]
+
+There seems to be a pattern with all the classification models. The negative classification is always lower than the rest. After looking at the data again, the tweets with negative sentiment value are about 20% of the entire dataset. Neutral is at 44%, and positive is at 33%. The next step is to limit all tweets to the same amount of data. I decided to randomly sample 4000 data point from each class. That data is then put into a 70/30 train-test split; 70% of the data is for training, 30% for testing. My next step is to make an attempt at the neural network with short and shallow settings. Three Dense layers at 32, 16, and 3 neurons each. Three Dropout layers before each Dense layer set at 0.1, 0.3, and 0.2. The epochs have been changed to 50, and the batch size to 2048.
+
+# df is the pandas dataframe object which contains all the clean data
+
+# Function to create targets based on compound score
+def get_targets(row):
+    if row < 0:
+        return 0
+    elif row == 0:
+        return 1
+    else:
+        return 2
+
+# Creating the targets based of the compound value
+df['target'] = df['compound'].map(lambda x: get_targets(x))
+neg = df[df.target == 0]
+neu = df[df.target == 1]
+pos = df[df.target == 2]
+
+# Randomly sampling tweets to a limit of 4000 each
+neg_sampled = neg.sample(4000)
+neu_sampled = neu.sample(4000)
+pos_sampled = pos.sample(4000)
+
+# concating all sampled datasets together
+df_test = pd.concat([neg_sampled, neu_sampled, pos_sampled])
+df_test.shape
+
+# Creating training/testing data, 70/30 split
+X_train, X_test, y_train, y_test = train_test_split(df_test.token_text, df_test.target, train_size=0.7)
+
+# For every tweet, creating a word vector array for tweet
+X_train = np.concatenate([buildWordVector(z, num_features) for z in X_train])
+X_train = scale(X_train)
+X_test = np.concatenate([buildWordVector(z, num_features) for z in X_test])
+X_test = scale(X_test)
+
+# in order for keras to accurately multi-classify, must convert from 1 column to 3 columns
+y_train = keras.utils.np_utils.to_categorical(y_train, num_classes=3)
+y_test = keras.utils.np_utils.to_categorical(y_test, num_classes=3)
+
+# MULTI-CLASSIFICATION
+# Evaluating with a Keras NN
+# fix random seed for reproducibility
+
+seed = 7
+np.random.seed(seed)
+
+leng = X_train.shape[1]
+
+X_train = X_train.reshape(X_train.shape[0], 1, leng)
+X_test = X_test.reshape(X_test.shape[0], 1, leng)
+
+# Keras neural network short and shallow
+model_keras = Sequential()
+model_keras.add(Dropout(0.1, input_shape=(X_train.shape[1],)))
+model_keras.add(Dense(32, activation=’relu’, kernel_constraint=maxnorm(1)))
+model_keras.add(Dropout(0.3))
+model_keras.add(Dense(16, activation=’relu’, kernel_constraint=maxnorm(1)))
+model_keras.add(Dropout(0.2))
+model_keras.add(Dense(3, activation=’softmax’))
+
+model_keras.compile(loss=’categorical_crossentropy’,
+                    optimizer=’adam’,
+                    metrics=[‘accuracy’])
+
+# Model parameters
+epochs = 50
+batch = 2048
+
+history = model_keras.fit(X_train, y_train, 
+                          validation_data=(X_test, y_test), 
+                          epochs=epochs, 
+                          batch_size=batch, 
+                          verbose=0)
+
+score = model_keras.evaluate(X_test, y_test, 
+                             batch_size=batch, 
+                             verbose=0)
+                             
+print ‘Evaluated score on test data:’, score[1]
+
+# summarize history for accuracy
+plt.figure(num=None, figsize=(8, 6), dpi=100, facecolor=’w’, edgecolor=’k’)
+plt.plot(history.history[‘acc’])
+plt.plot(history.history[‘val_acc’], c=’r’, ls=’dashed’)
+plt.title(‘model accuracy’)
+plt.ylabel(‘accuracy’)
+plt.xlabel(‘epoch’)
+plt.legend([‘train’, ‘test’], loc=’upper left’)
+plt.hlines(y=score[1], xmin=0, xmax=epochs)
+plt.show()
+
+# summarize history for loss
+plt.figure(num=None, figsize=(8, 6), dpi=100, facecolor=’w’, edgecolor=’k’)
+plt.plot(history.history[‘loss’])
+plt.plot(history.history[‘val_loss’], c=’r’, ls=’dashed’)
+plt.title(‘model loss’)
+plt.ylabel(‘loss’)
+plt.xlabel(‘epoch’)
+plt.legend([‘train’, ‘test’], loc=’upper left’)
+plt.show()
+
+![Keras Model Accuracy v002][https://cdn-images-1.medium.com/max/800/0*ymVDQ0WFOCzxSWKO.]
+![Keras Model Classification Report v002][https://cdn-images-1.medium.com/max/800/0*2C-wyq1Ud6UlN-PZ.]
+
+This trial with the Keras classifier performed better than the previous models. Looking at the recall scores, the negative numbers are not looking as bad as before. Even though there is an even amount of 4000 data points for each sentiment value, it may be that the neutral class has more unique words. Further tests will be in making an attempt to add an LSTM layer in order to add a memory layer, and a convoloution layer in order to find hidden patterns.
+
+Conclusion
+The data needed to get a better classifier score has to be specific. It cannot be random tweets. Literally the most negative words have to be searched and collected, as well as the most positive. After doing so, I believe this classifier will do a good as a job as the VADER sentiment analysis.
+
+Machine Learning
+Python
+Keras
+Twitter
+Nlp
